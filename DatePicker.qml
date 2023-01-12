@@ -14,7 +14,8 @@ ListView {
  // private
     property date selectedDate: new Date()
 
-    width: 500;  height: 100 // default size
+//    width: 500;  height: 100 // default size
+    width: 600;  height: 300
     snapMode:    ListView.SnapOneItem
     orientation: Qt.Horizontal
     clip:        true
@@ -68,7 +69,7 @@ ListView {
                             id: text
 
                             anchors.centerIn: parent
-                            font.pixelSize: 0.5 * parent.height
+                            font.pixelSize: 0.9 * parent.height //0.5
                             font.bold:      new Date(year, month, date).toDateString() == new Date().toDateString() // today
                             text: {
                                 if(day < 0)                                               ['S', 'M', 'T', 'W', 'T', 'F', 'S'][index] // Su-Sa
