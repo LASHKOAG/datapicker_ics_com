@@ -2,12 +2,10 @@ import QtQuick 2.15
 //import P358 1.0
 
 Item {
-	id: container
-    property alias text: input.text
-    property alias input: input
+    id: container
     property bool validDate: true
     property date dateValue
-	width: 180; height: 28
+    width: 180; height: 28
 
     BorderImage {
         id: borderImage
@@ -15,32 +13,33 @@ Item {
         anchors.fill: parent
     }
 
-	TextInput {
-		id: input
+    Text {
+        id: lbl_dateInput
         color: enabled ? validDate ? "#151515" : "red" : "grey"
-		selectionColor: "green"
-		font.pixelSize: 16; font.bold: true
-		width: parent.width-16
-		anchors.centerIn: parent
+        //            selectionColor: "green"  ???
+        font.pixelSize: 16
+        font.bold: true
+        width: parent.width-16
+        anchors.centerIn: parent
         focus: false
-//        inputMask: "00.00.0000"
+        horizontalAlignment: Text.AlignHCenter
+        verticalAlignment: Text.AlignVCenter
+        //            style: Text.Raised; styleColor: "black"
+        text: ""
 //    <---validator: DateValidator {}
-//        placeholderText: "Digits only field"
-        inputMethodHints: Qt.ImhDigitsOnly
-//        enterKeyAction: EnterKeyAction.Next
-//        onAccepted: textArea.focus = true
-//        onAccepted: setDateFromUser()
-//        onTextEdited: setDateFromUser()
-//        onFocusChanged: setDateFromUser()
-        MouseArea {
-            id: mouseAreaRec
-            anchors.fill: parent
-            onClicked: {
-                console.log("ma")
-                setDateFromUser()
-            }
+        //            inputMethodHints: Qt.ImhDigitsOnly ???
+        wrapMode: Text.WordWrap
+    }
+    MouseArea {
+        id: region
+        anchors.fill: container
+        onClicked: {
+            setDateFromUser()
         }
     }
+//    transitions: Transition {
+//        ColorAnimation { target: lbl_dateInput; }
+//    }
 
     DatePicker {
         id: datePicker
@@ -48,10 +47,10 @@ Item {
         anchors.top: borderImage.bottom
         Component.onCompleted: set(new Date()) // today
         onClicked:{
-            input.text = Qt.formatDate(date, 'dd.MM.yyyy')
+            lbl_dateInput.text = Qt.formatDate(date, 'dd.MM.yyyy')
             //print('onClicked', Qt.formatDate(date, 'M/d/yyyy'))
             datePicker.visible = false
-            input.visible = true
+            lbl_dateInput.visible = true
         }
     }
 
@@ -65,7 +64,7 @@ Item {
     }
 
     function setDateFromUser(){
-        input.visible = !input.visible
+        lbl_dateInput.visible = !lbl_dateInput.visible
         datePicker.visible = !datePicker.visible
     }
 
