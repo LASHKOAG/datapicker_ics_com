@@ -12,8 +12,8 @@ Window {
 //        onClicked: print('onClicked', Qt.formatDate(date, 'M/d/yyyy'))
 //    }
 
-//        DatePicker {
-//            id: dp
+        DatePicker {
+            id: dp
 //            visible: false
 //            Component.onCompleted: set(new Date()) // today
 //            onClicked:{
@@ -23,9 +23,9 @@ Window {
 //                dp.visible = false
 //                _date.visible = true
 //            }
-//        }
+        }
 
-    LineInputDate {
-        id: _date
-    }
+//    LineInputDate {
+//        id: _date
+//    }
 }

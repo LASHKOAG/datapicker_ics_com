@@ -1,99 +1,273 @@
-import QtQuick 2.0
+import QtQuick 2.5
+import QtQuick.Layouts 1.3
+import QtQuick.Controls 2.0
 
-ListView {
-    id: root
 
- // public
-    function set(date) { // new Date(2019, 10 - 1, 4)
-        selectedDate = new Date(date)
-        positionViewAtIndex((selectedDate.getFullYear()) * 12 + selectedDate.getMonth(), ListView.Center) // index from month year
+Item {
+    z: 100
+    id: calendarView
+
+    property bool dateVisible: false
+    property string placeholderText: qsTr("Date")
+    property string currentDate: (new Date).toLocaleString(Qt.locale(), "dd-MM-yyyy")
+    property int yearStart: (new Date).toLocaleString(Qt.locale(), "yyyy") - 100
+    property int yearEnd: (new Date).toLocaleString(Qt.locale(), "yyyy")
+    property date selectedDay: Date.fromLocaleString(Qt.locale(), currentDate, "dd-MM-yyyy")
+    property string selectedItemColor: "orange"
+
+    signal dateChanged(date dateValue)
+
+    RowLayout {
+        width: parent.width
+        anchors.verticalCenter: parent.verticalCenter
+        TextField {
+            id: dataTextCaption
+            placeholderText: calendarView.placeholderText
+            readOnly: true
+        }
+        Text {
+            id: dataText
+            text: currentDate
+        }
+        MouseArea {
+            anchors.fill: dataTextCaption
+            onClicked: dateVisible = true
+        }
     }
 
-    signal clicked(date date);  // onClicked: print('onClicked', date.toDateString())
+    Rectangle {
+        id: mainrec
+        visible: dateVisible
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.top: parent.top
+        width: controlDay.width + controlMonth.width + controlYear.width
+        height: controlDay.height + buttonOk.height + 20
+        border.color: "gray"
+        z: 100
 
- // private
-    property date selectedDate: new Date()
+        //property int yearStart: 2015
+        //property int yearEnd: yearStart + 50
 
-//    width: 500;  height: 100 // default size
-    width: 600;  height: 300
-    snapMode:    ListView.SnapOneItem
-    orientation: Qt.Horizontal
-    clip:        true
+//        property int dayWidth: screenWidth / 5
+//        property int monthWidth: screenWidth / 4
+//        property int yearWidth: screenWidth / 5
+//        property int heightTumbler:  screenHeight / 3
+        property int dayWidth: mainrec.width / 5
+        property int monthWidth: mainrec.width / 4
+        property int yearWidth: mainrec.width / 5
+        property int heightTumbler:  mainrec.width / 3
 
-    model: 3000 * 12 // index == months since January of the year 0
+        function daysInMonth(month,year) {
+            return new Date(year, month, 0).getDate();
+        }
 
-    delegate: Item {
-        property int year:      Math.floor(index / 12)
-        property int month:     index % 12 // 0 January
-        property int firstDay:  new Date(year, month, 1).getDay() // 0 Sunday to 6 Saturday
+        function yearsModel() {
+            var years = [];
+            for (var i = 0; i < (yearEnd - yearStart); i++)
+                years[i] = yearStart + i
+            return years;
+        }
 
-        width: root.width;  height: root.height
-
+        Component.onCompleted: {
+            selectedDay = Date.fromLocaleString(Qt.locale(), currentDate, "dd-MM-yyyy")
+            controlDay.model = mainrec.daysInMonth(selectedDay.getMonth(), selectedDay.getFullYear())
+            controlMonth.currentIndex = selectedDay.getMonth()
+            controlYear.currentIndex = yearsModel().indexOf(selectedDay.getFullYear())
+            controlDay.currentIndex = selectedDay.getDate() - 1
+        }
         Column {
-            Item { // month year header
-                width: root.width;  height: root.height - grid.height
+            spacing: 20
+            Row
+            {
+                Tumbler {
+                    id: controlDay
+                    model: 0
+                    visibleItemCount: 5
+                    width: mainrec.dayWidth
+                    height: mainrec.heightTumbler
+                    background: Item {
+                        Rectangle {
+                            opacity: controlDay.enabled ? 0.2 : 0.1
+                            border.color: "#000000"
+                            width: parent.width - 10
+                            height: 1
+                            anchors.top: parent.top
+                        }
 
-                Text { // month year
-                    anchors.centerIn: parent
-                    text: ['January', 'February', 'March', 'April', 'May', 'June',
-                           'July', 'August', 'September', 'October', 'November', 'December'][month] + ' ' + year
-                    font {pixelSize: 0.5 * grid.cellHeight}
+                        Rectangle {
+                            opacity: controlDay.enabled ? 0.2 : 0.1
+                            border.color: "#000000"
+                            width: parent.width - 10
+                            height: 1
+                            anchors.bottom: parent.bottom
+                        }
+                    }
+
+                    delegate: Text {
+                        id: dayText
+                        text: modelData + 1
+                        font.pixelSize: 18
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        color: (index === controlDay.currentIndex)? selectedItemColor: "black"
+                        opacity: 1.0 - Math.abs(Tumbler.displacement) / (controlDay.visibleItemCount / 2)
+                    }
+
+                    Rectangle {
+                        anchors.horizontalCenter: controlDay.horizontalCenter
+                        y: controlDay.height * 0.4
+                        width: mainrec.dayWidth - 10
+                        height: 2
+                        color: "#ff9500"
+                    }
+
+                    Rectangle {
+                        anchors.horizontalCenter: controlDay.horizontalCenter
+                        y: controlDay.height * 0.6
+                        width: mainrec.dayWidth - 10
+                        height: 2
+                        color: "#ff9500"
+                    }
                 }
-            }
+                Tumbler {
+                    id: controlMonth
 
-            Grid { // 1 month calender
-                id: grid
-
-                width: root.width;  height: 0.875 * root.height
-                property real cellWidth:  width  / columns;
-                property real cellHeight: height / rows // width and height of each cell in the grid.
-
-                columns: 7 // days
-                rows:    7
-
-                Repeater {
-                    model: grid.columns * grid.rows // 49 cells per month
-
-                    delegate: Rectangle { // index is 0 to 48
-                        property int day:  index - 7 // 0 = top left below Sunday (-7 to 41)
-                        property int date: day - firstDay + 1 // 1-31
-
-                        width: grid.cellWidth;  height: grid.cellHeight
-                        border.width: 0.3 * radius
-                        border.color: new Date(year, month, date).toDateString() == selectedDate.toDateString()  &&  text.text  &&  day >= 0?
-                                      'black': 'transparent' // selected
-                        radius: 0.02 * root.height
-                        opacity: !mouseArea.pressed? 1: 0.3  //  pressed state
-
-                        Text {
-                            id: text
-
-                            anchors.centerIn: parent
-                            font.pixelSize: 0.9 * parent.height //0.5
-                            font.bold:      new Date(year, month, date).toDateString() == new Date().toDateString() // today
-                            text: {
-                                if(day < 0)                                               ['S', 'M', 'T', 'W', 'T', 'F', 'S'][index] // Su-Sa
-                                else if(new Date(year, month, date).getMonth() == month)  date // 1-31
-                                else                                                      ''
-                            }
+                    model: 12
+                    visibleItemCount: 5
+                    width: mainrec.monthWidth
+                    height: mainrec.heightTumbler
+                    background: Item {
+                        Rectangle {
+                            opacity: controlMonth.enabled ? 0.2 : 0.1
+                            border.color: "#000000"
+                            width: controlMonth.width - 10
+                            height: 1
+                            anchors.top: parent.top
                         }
 
-                        MouseArea {
-                            id: mouseArea
-
-                            anchors.fill: parent
-                            enabled:    text.text  &&  day >= 0
-
-                            onClicked: {
-                                selectedDate = new Date(year, month, date)
-                                root.clicked(selectedDate)
-                            }
+                        Rectangle {
+                            opacity: controlMonth.enabled ? 0.2 : 0.1
+                            border.color: "#000000"
+                            width: parent.width - 10
+                            height: 1
+                            anchors.bottom: parent.bottom
                         }
+                    }
+
+                    delegate: Text {
+                        id: monthText
+                        text: Qt.locale().monthName(index)
+                        font.pixelSize: 18
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        opacity: 1.0 - Math.abs(Tumbler.displacement) / (controlMonth.visibleItemCount / 2)
+                        color: (index == controlMonth.currentIndex)? selectedItemColor: "black"
+                        Component.onCompleted: {
+                            //mainrec.monthWidth = (monthText.width > mainrec.monthWidth)?monthText.width: mainrec.monthWidth
+                        }
+                    }
+
+                    Rectangle {
+                        anchors.horizontalCenter: controlMonth.horizontalCenter
+                        y: controlMonth.height * 0.4
+                        width: mainrec.dayWidth - 10
+                        height: 2
+                        color: "#ff9500"
+                    }
+
+                    Rectangle {
+                        anchors.horizontalCenter: controlMonth.horizontalCenter
+                        y: controlMonth.height * 0.6
+                        width: mainrec.dayWidth - 10
+                        height: 2
+                        color: "#ff9500"
+                    }
+                    onCurrentIndexChanged: {
+                        controlDay.model = new Date(controlYear.currentItem.text, currentIndex + 1, 0).getDate()
+                    }
+                }
+                Tumbler {
+                    id: controlYear
+
+                    model: mainrec.yearsModel()
+                    visibleItemCount: 5
+                    width: mainrec.yearWidth
+                    height: mainrec.heightTumbler
+                    background: Item {
+                        Rectangle {
+                            opacity: controlYear.enabled ? 0.2 : 0.1
+                            border.color: "#000000"
+                            width: parent.width - 10
+                            height: 1
+                            anchors.top: parent.top
+                        }
+
+                        Rectangle {
+                            opacity: controlYear.enabled ? 0.2 : 0.1
+                            border.color: "#000000"
+                            width: parent.width - 10
+                            height: 1
+                            anchors.bottom: parent.bottom
+                        }
+                    }
+
+                    delegate: Text {
+                        id: yearText
+                        text: modelData
+                        font.pixelSize: 18
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        opacity: 1.0 - Math.abs(Tumbler.displacement) / (controlYear.visibleItemCount / 2)
+                        color: (index == controlYear.currentIndex)?selectedItemColor: "black"
+                    }
+
+                    Rectangle {
+                        anchors.horizontalCenter: controlYear.horizontalCenter
+                        y: controlYear.height * 0.4
+                        width: mainrec.dayWidth - 10
+                        height: 2
+                        color: "#ff9500"
+                    }
+
+                    Rectangle {
+                        anchors.horizontalCenter: controlYear.horizontalCenter
+                        y: controlYear.height * 0.6
+                        width: mainrec.dayWidth - 10
+                        height: 2
+                        color: "#ff9500"
+                    }
+                    onCurrentIndexChanged: {
+                        controlDay.model = new Date(currentItem.text, controlMonth.currentIndex + 1, 0).getDate()
                     }
                 }
             }
         }
-    }
+        Button {
+            id: buttonCancel
+            text: qsTr("Annulla")
+            anchors.bottom: parent.bottom
+            anchors.left: parent.left
+            onClicked: {
+                dateVisible = false
+            }
+        }
 
-     // Component.onCompleted: set(new Date()) // today (otherwise Jan 0000)
+        Button {
+            id: buttonOk
+            text: qsTr("Conferma")
+            Layout.alignment: Qt.AlignRight
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            onClicked: {
+                var date = new Date();
+                date.setFullYear(controlYear.currentItem.text);
+                date.setDate(controlDay.currentIndex + 1);
+                date.setMonth(controlMonth.currentIndex)
+                dateChanged(date)
+                dateVisible = false
+
+                currentDate = date.toLocaleString(Qt.locale(), "dd-MM-yyyy")
+            }
+        }
+    }
 }
