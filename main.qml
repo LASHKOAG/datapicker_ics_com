@@ -14,7 +14,7 @@ Window {
 
         DatePicker {
             id: dp
-//            visible: false
+            visible: true
 //            Component.onCompleted: set(new Date()) // today
 //            onClicked:{
 //                _date.text = Qt.formatDate(date, 'dd.MM.yyyy')
