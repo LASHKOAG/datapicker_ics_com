@@ -1,7 +1,26 @@
 import QtQuick 2.0
-//import QmlControls 0.1
-import QtQuick.Controls 2.15
+
 /*
+Copyright (c) 2011-2012, Vasiliy Sorokin <sorokin.vasiliy@gmail.com>
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+* Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+* Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+* Neither the name of the Vasiliy Sorokin nor the names of its contributors may be used to endorse or
+promote products derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS
+BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
+OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY
+WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Usage:
     DatePicker {
@@ -10,6 +29,13 @@ Usage:
         anchors {
             top: parent.top
             horizontalCenter: parent.horizontalCenter
+        }
+
+        function orientationString() {
+            if (screen.currentOrientation === Screen.Portrait || screen.currentOrientation === Screen.PortraitInverted )
+                return "portrait"
+            else
+                return "landscape"
         }
 
         platformStyle: DatePickerStyle {
@@ -26,117 +52,297 @@ Usage:
 
 Item {
     id: root
-    width: parent.width
-    height: 200
 
     property DatePickerStyle platformStyle: DatePickerStyle {}
 
-    signal selectedDateChanged(int day, int month, int year);
+    signal selectedDateChanged(date selectedDate)
 
+    width: background.sourceSize.width
+    height: background.sourceSize.height
+    Item {
+        id: wrapper
 
-    QtObject {
-        id: internal
-        property int day
-        property int month
-        property int year
+        x: 0
+        y: 0
+        width: parent.width
+        height:parent.height
 
-        property ListModel dayModel: ListModel {}
-        property ListModel monthModel: ListModel {}
-        property ListModel yearModel: ListModel {}
+        clip: true
 
-        function padDigits(number, digits) {
-            return new Array(Math.max(digits - String(number).length + 1, 0)).join(0) + number;
+        NumberAnimation {
+            id: previousMonthAnimation
+
+            loops: 1
+            target: wrapper
+            running: false
+            property: "x"
+            from: 0
+            to: wrapper.width
+            duration: 75
+
+//            onCompleted: {
+//                wrapper.x = 0
+//            }
         }
 
-        property date selectedDate
-        function update() {
-            var newDate = new Date(year, month, day)
-            selectedDate = newDate
-            if (root.visible) {
-                root.selectedDateChanged(day,month,year)
-            }
+        NumberAnimation {
+            id: nextMonthAnimation
+
+            loops: 1
+            target: wrapper
+            running: false
+            property: "x"
+            from: 0
+            to: -wrapper.width
+            duration: 75
+
+//            onCompleted: {
+//                wrapper.x = 0
+//            }
         }
 
-        Component.onCompleted: {
+        Image {
+            id: background
+            anchors.fill: parent
+//            source: root.platformStyle.backgroundImage
+            Item {
+                id: header
 
-            var i=0;
-            for (i=1; i<=31; i++) {
-                dayModel.append({"name": padDigits(i, 2), "value": i});
+                anchors {
+                    left: parent.left
+                    right: parent.right
+                    top: parent.top
+                }
+
+                height: 65
+
+                Item {
+                    id: leftArrow
+
+                    anchors {
+                        left: parent.left
+                        top: parent.top
+                        bottom: parent.bottom
+                    }
+
+                    width: 100
+                    height: 65
+
+                    Image {
+                        id: leftArrowImage
+
+                        anchors {
+                            left: parent.left
+                            leftMargin: (header.width / 7) / 2 - (width / 2)
+                            verticalCenter: parent.verticalCenter
+                        }
+
+                        width: height
+//                        source: root.platformStyle.leftArrowImage
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+
+                        onPressed: {
+                            leftArrowImage.source = root.platformStyle.leftArrowPressedImage
+                        }
+
+                        onReleased: {
+                            leftArrowImage.source = root.platformStyle.leftArrowImage
+                            previousMonthAnimation.start()
+                            dateModel.showPrevious()
+                        }
+                    }
+                }
+
+                Text {
+                    id: monthLabel
+                    anchors.centerIn: parent
+                    font.pixelSize: root.platformStyle.monthFontSize
+                    font.weight: Font.Light
+                    color: root.platformStyle.monthColor
+                }
+
+                Item {
+                    id: rightArrow
+
+                    anchors {
+                        right: parent.right
+                        top: parent.top
+                        bottom: parent.bottom
+                    }
+
+                    width: 100
+                    height: 70
+
+                    Image {
+                        id: rightArrowImage
+
+                        anchors {
+                            right: parent.right
+                            rightMargin: (header.width / 7) / 2 - (width / 2)
+                            verticalCenter: parent.verticalCenter
+                        }
+
+                        width: height
+//                        source: root.platformStyle.rightArrowImage
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onPressed: {
+                            rightArrowImage.source = root.platformStyle.rightArrowPressedImage
+                        }
+
+                        onReleased: {
+                            rightArrowImage.source = root.platformStyle.rightArrowImage
+                            nextMonthAnimation.start()
+                            dateModel.showNext()
+                        }
+                    }
+                }
+
+
             }
 
-            var MonthNames = new Array(12);
-            for (i=1; i<=12; i++) {
-                monthModel.append({"name": "Tháng " + (i), "value": i});
+            Row {
+                id: weekDaysGrid
+
+                anchors {
+                    left: parent.left
+                    right: parent.right
+                    top: header.bottom
+                    bottomMargin: 10
+                }
+
+                width: parent.width
+
+                WeekCell {
+                    text: qsTr("Mon")
+                    platformStyle: datePicker.platformStyle
+                }
+                WeekCell {
+                    text: qsTr("Tue")
+                    platformStyle: datePicker.platformStyle
+                }
+                WeekCell {
+                    text: qsTr("Wed")
+                    platformStyle: datePicker.platformStyle
+                }
+                WeekCell {
+                    text: qsTr("Thu")
+                    platformStyle: datePicker.platformStyle
+                }
+                WeekCell {
+                    text: qsTr("Fri")
+                    platformStyle: datePicker.platformStyle
+                }
+                WeekCell {
+                    isWeekEnd: true
+                    text: qsTr("Sat")
+                    platformStyle: datePicker.platformStyle
+                }
+                WeekCell {
+                    isWeekEnd: true
+                    text: qsTr("Sun")
+                    platformStyle: datePicker.platformStyle
+                }
             }
 
-            var year = new Date();
-            for (i=year.getFullYear()-100; i<=year.getFullYear(); i++) {
-                yearModel.append({"name": padDigits(i, 4), "value": i});
+            GridView {
+                id: daysGrid
+
+                anchors {
+                    top: weekDaysGrid.bottom
+                    left: parent.left
+                    right: parent.right
+                    bottom: parent.bottom
+                }
+                cellWidth: width / 7 - 1
+                cellHeight: height / 6
+
+                interactive: false
+
+                delegate: DayCell {
+                    platformStyle: datePicker.platformStyle
+
+                    width: daysGrid.cellWidth;
+                    height: daysGrid.cellHeight
+
+                    isCurrentDay: model.isCurrentDay
+                    isOtherMonthDay: model.isOtherMonthDay
+                    hasEventDay: model.hasEventDay
+
+                    dateOfDay: model.dateOfDay
+                }
+
+                model: DateModel {
+                    id: dateModel
+                    currentDate: new Date()
+
+                    onMonthChanged: {
+                        monthLabel.text = getMonthYearString()
+                        daysGrid.currentIndex = dateModel.firstDayOffset + selectedDate.getDate() - 1
+                    }
+
+                    onSelectedDateChanged: {
+                        root.selectedDateChanged(selectedDate)
+                    }
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+
+                    property int pressedPosition: 0
+
+                    onPressed: {
+                        pressedPosition = mouseX
+                    }
+
+                    onReleased: {
+                        var delta =  mouseX - pressedPosition;
+                        if (Math.abs(delta) > 100) {
+                            if (delta < 0) {
+                                nextMonthAnimation.start()
+                                dateModel.showNext()
+                            }
+                            else {
+                                previousMonthAnimation.start()
+                                dateModel.showPrevious()
+                            }
+                        }
+                        pressedPosition = 0
+
+                        if (Math.abs(delta) < 20) {
+                            var index = daysGrid.indexAt(mouseX, mouseY)
+                            daysGrid.currentIndex = index
+                            dateModel.selectedDate = daysGrid.currentItem.dateOfDay
+                            if (daysGrid.currentItem.isOtherMonthDay) {
+                                if (daysGrid.currentItem.dateOfDay.getMonth() < dateModel.selectedDate.getMonth())
+                                    previousMonthAnimation.start()
+                                else
+                                    nextMonthAnimation.start()
+
+                                dateModel.changeModel(daysGrid.currentItem.dateOfDay)
+                            }
+                        }
+                    }
+                }
             }
-
-            yearPicker.currentIndex = 101 - 10
-            monthPicker.currentIndex = 0
-            dayPicker.currentIndex = 0
-
-            internal.day = 1
-            internal.month = 1
         }
     }
-
-    Rectangle {
-        anchors.fill: parent
-        color: "white"
-    }
-
-    Row {
-        anchors.fill: parent
-
-        DataPicker {
-            id: dayPicker
-            height: parent.height
-            width: parent.width / 4
-            model: internal.dayModel
-
-            onSelectedIndexChanged: {
-                //console.info("day changed")
-                var item = internal.dayModel.get(selectedIndex)
-                internal.day = item["value"]
-                internal.update()
-            }
-        }
-
-        DataPicker {
-            id: monthPicker
-            height: parent.height
-            width: parent.width / 2
-            model: internal.monthModel
-            onSelectedIndexChanged: {
-                var item = internal.monthModel.get(selectedIndex)
-                internal.month = item["value"]
-                internal.update()
-            }
-        }
-
-        DataPicker {
-            id: yearPicker
-            height: parent.height
-            width: parent.width / 4
-            model: internal.yearModel
-            onSelectedIndexChanged: {
-                var item = internal.yearModel.get(selectedIndex)
-                internal.year = item["value"]
-                internal.update()
-            }
-        }
-    }
-
     Component.onCompleted: {
         var currentDate = new Date()
         setDate(currentDate)
     }
 
     function setDate(currentDate) {
-//        dateModel.changeModel(currentDate)
-//        daysGrid.currentIndex = dateModel.firstDayOffset + currentDate.getDate() - 1
+        dateModel.changeModel(currentDate)
+        daysGrid.currentIndex = dateModel.firstDayOffset + currentDate.getDate() - 1
+    }
+
+    function setEvent(eventDate, enable) {
+        dateModel.setEvent(eventDate, enable)
     }
 }

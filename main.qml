@@ -7,28 +7,6 @@ Window {
     height: 480
     title: qsTr("Hello World")
 
-//    DatePicker {
-//        Component.onCompleted: set(new Date()) // today
-//        onClicked: print('onClicked', Qt.formatDate(date, 'M/d/yyyy'))
-//    }
-
-//        DatePicker {
-//            id: dp
-//            visible: true
-//            Component.onCompleted: set(new Date()) // today
-//            onClicked:{
-//                _date.text = Qt.formatDate(date, 'dd.MM.yyyy')
-//                print('onClicked', Qt.formatDate(date, 'M/d/yyyy'))
-////                _date.setDate(date, 'M/d/yyyy')
-//                dp.visible = false
-//                _date.visible = true
-//            }
-//        }
-
-//    LineInputDate {
-//        id: _date
-//    }
-
     DatePicker {
         id: datePicker
 
@@ -37,8 +15,15 @@ Window {
             horizontalCenter: parent.horizontalCenter
         }
 
+        function orientationString() {
+            if (screen.currentOrientation === Screen.Portrait || screen.currentOrientation === Screen.PortraitInverted )
+                return "portrait"
+            else
+                return "landscape"
+        }
+
         platformStyle: DatePickerStyle {
-//            orientationString: datePicker.orientationString()
+            orientationString: datePicker.orientationString()
         }
     }
 }
