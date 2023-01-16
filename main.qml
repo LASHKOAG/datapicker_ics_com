@@ -12,9 +12,9 @@ Window {
 //        onClicked: print('onClicked', Qt.formatDate(date, 'M/d/yyyy'))
 //    }
 
-        DatePicker {
-            id: dp
-            visible: true
+//        DatePicker {
+//            id: dp
+//            visible: true
 //            Component.onCompleted: set(new Date()) // today
 //            onClicked:{
 //                _date.text = Qt.formatDate(date, 'dd.MM.yyyy')
@@ -23,9 +23,22 @@ Window {
 //                dp.visible = false
 //                _date.visible = true
 //            }
-        }
+//        }
 
 //    LineInputDate {
 //        id: _date
 //    }
+
+    DatePicker {
+        id: datePicker
+
+        anchors {
+            top: parent.top
+            horizontalCenter: parent.horizontalCenter
+        }
+
+        platformStyle: DatePickerStyle {
+//            orientationString: datePicker.orientationString()
+        }
+    }
 }

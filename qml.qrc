@@ -18,5 +18,7 @@
         <file>pic/scrollbar.png</file>
         <file>pic/toolbutton.png</file>
         <file>pic/toolbutton.sci</file>
+        <file>DatePickerStyle.qml</file>
+        <file>DataPicker.qml</file>
     </qresource>
 </RCC>
